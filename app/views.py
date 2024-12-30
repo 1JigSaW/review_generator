@@ -6,9 +6,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from app.models import ReviewLink, Language, Tag, Review
-from app.serializers import LanguageSerializer, TagSerializer, ReviewLinkSerializer
+from app.serializers import LanguageSerializer, TagSerializer
 from review_generator import settings
-from services.openai_service import generate_review
+from services.openai_service import generate_review, generate_tags, humanize_text, translate_text
+from services.text_utils_services import add_human_like_noise
 
 
 class CreateUniqueLink(APIView):
@@ -30,9 +31,12 @@ class GenerateReview(APIView):
             if not tags:
                 return Response({"error": "Tags are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-            generated_text = generate_review(tags, language)
+            generated_review_text_raw = generate_review(tags, language)
+            humanize_raw_text = humanize_text(generated_review_text_raw, language)
+            humanize_raw_text_with_noise = add_human_like_noise(humanize_raw_text)
+            translated_text = translate_text(humanize_raw_text_with_noise, language)
 
-            return Response({"review": generated_text}, status=status.HTTP_200_OK)
+            return Response({"review": translated_text}, status=status.HTTP_200_OK)
 
         except RuntimeError as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -85,5 +89,14 @@ class SaveReview(APIView):
                 review.tags.set(tag_objects)
 
             return Response({"message": "Review saved successfully"}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class GenerateTags(APIView):
+    def get(self, request):
+        try:
+            generated_tags = generate_tags()
+            return Response({"tags": generated_tags}, status=status.HTTP_200_OK)
+
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

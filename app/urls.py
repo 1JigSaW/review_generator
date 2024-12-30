@@ -1,6 +1,6 @@
 from django.urls import path
 
-from app.views import CreateUniqueLink, LanguageList, TagList, GenerateReview, SaveReview
+from app.views import CreateUniqueLink, LanguageList, TagList, GenerateReview, SaveReview, GenerateTags
 
 urlpatterns = [
     path('create-link/', CreateUniqueLink.as_view(), name='create_link'),
@@ -8,4 +8,5 @@ urlpatterns = [
     path("tags/", TagList.as_view(), name="tag_list"),
     path("generate-review/", GenerateReview.as_view(), name="generate_review"),
     path("save-review/", SaveReview.as_view(), name="save-review"),
+    path("generate-tags/", GenerateTags.as_view(), name="generate_tags"),
 ]
